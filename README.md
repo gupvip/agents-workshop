@@ -64,6 +64,13 @@ setup.bat
 python setup.py
 ```
 
+The setup script will:
+1. ✅ Create a virtual environment
+2. ✅ Install all dependencies
+3. ✅ Register Jupyter kernel
+4. ✅ Verify your API configuration
+5. 🚀 **Automatically launch Jupyter Lab** (opens first notebook!)
+
 ### Step 4: Start Learning!
 
 1. Open the folder in VS Code

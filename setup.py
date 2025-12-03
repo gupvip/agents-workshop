@@ -421,6 +421,51 @@ except Exception as e:
         return True
 
 
+def launch_jupyter():
+    """Ask user if they want to launch Jupyter and do so."""
+    print_step(9, "Launch Jupyter...")
+    
+    venv_python = get_venv_python()
+    project_root = get_project_root()
+    
+    print(f"\n{Colors.BOLD}Would you like to launch Jupyter Lab now?{Colors.ENDC}")
+    print(f"   {Colors.CYAN}[Y]{Colors.ENDC} Yes, launch Jupyter Lab (recommended)")
+    print(f"   {Colors.CYAN}[N]{Colors.ENDC} No, I'll use VS Code or launch later")
+    
+    try:
+        response = input(f"\n{Colors.YELLOW}Your choice [Y/n]: {Colors.ENDC}").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        response = 'n'
+    
+    if response in ['', 'y', 'yes']:
+        print_info("Launching Jupyter Lab...")
+        print_info("Opening browser at http://localhost:8888")
+        print_info("Press Ctrl+C in terminal to stop Jupyter when done")
+        print(f"\n{Colors.GREEN}Starting Jupyter Lab...{Colors.ENDC}\n")
+        
+        # Get the jupyter executable from venv
+        if platform.system() == "Windows":
+            jupyter_path = project_root / ".venv" / "Scripts" / "jupyter.exe"
+        else:
+            jupyter_path = project_root / ".venv" / "bin" / "jupyter"
+        
+        try:
+            # Launch Jupyter Lab - this will block
+            subprocess.run(
+                [str(jupyter_path), "lab"],
+                cwd=str(project_root)
+            )
+        except KeyboardInterrupt:
+            print(f"\n{Colors.GREEN}Jupyter Lab stopped.{Colors.ENDC}")
+        except Exception as e:
+            print_warning(f"Could not launch Jupyter: {e}")
+            print_info("You can launch it manually with: jupyter lab")
+    else:
+        print_info("Skipping Jupyter launch. You can start it anytime with:")
+        print(f"   {Colors.CYAN}jupyter lab{Colors.ENDC}")
+        print_next_steps()
+
+
 def print_next_steps():
     """Print instructions for next steps."""
     print_header("🎉 Setup Complete!")
@@ -428,43 +473,34 @@ def print_next_steps():
     print(f"""
 {Colors.GREEN}Your environment is ready!{Colors.ENDC}
 
-{Colors.BOLD}Next Steps:{Colors.ENDC}
+{Colors.BOLD}Quick Start Options:{Colors.ENDC}
 
-1. {Colors.CYAN}Open VS Code in this folder:{Colors.ENDC}
+   {Colors.YELLOW}Option 1 - Jupyter Lab (recommended for workshops):{Colors.ENDC}
+   source .venv/bin/activate  # or .venv\\Scripts\\activate on Windows
+   jupyter lab
+   
+   {Colors.YELLOW}Option 2 - VS Code:{Colors.ENDC}
    code .
+   Then select ".venv" or "Agentic AI Workshop" kernel
 
-2. {Colors.CYAN}Select the Python interpreter:{Colors.ENDC}
-   - Press Cmd+Shift+P (Mac) or Ctrl+Shift+P (Windows/Linux)
-   - Type "Python: Select Interpreter"
-   - Choose ".venv" or "Agentic AI Workshop"
-
-3. {Colors.CYAN}Open a notebook and select the kernel:{Colors.ENDC}
-   - Open any .ipynb file in session-1/
-   - Click "Select Kernel" in the top right
-   - Choose ".venv (Python 3.x)" or "Agentic AI Workshop"
-
-4. {Colors.CYAN}Start learning!{Colors.ENDC}
-   - Begin with: session-1/module-0-introduction-to-agents.ipynb
+{Colors.BOLD}Start Learning:{Colors.ENDC}
+   Open: session-1/module-0-introduction-to-agents.ipynb
 
 {Colors.BOLD}Useful Commands:{Colors.ENDC}
 
-   {Colors.YELLOW}# Activate virtual environment manually:{Colors.ENDC}
-   {Colors.BLUE}# On macOS/Linux:{Colors.ENDC}
-   source .venv/bin/activate
-   
-   {Colors.BLUE}# On Windows:{Colors.ENDC}
-   .venv\\Scripts\\activate
+   {Colors.CYAN}# Activate virtual environment:{Colors.ENDC}
+   source .venv/bin/activate  # macOS/Linux
+   .venv\\Scripts\\activate     # Windows
 
-   {Colors.YELLOW}# Launch Jupyter Lab:{Colors.ENDC}
+   {Colors.CYAN}# Launch Jupyter Lab:{Colors.ENDC}
    jupyter lab
 
-   {Colors.YELLOW}# Verify setup:{Colors.ENDC}
+   {Colors.CYAN}# Verify setup:{Colors.ENDC}
    python verify_setup.py
 
 {Colors.BOLD}Need Help?{Colors.ENDC}
    - Check the README.md file
    - Ensure your .env file has DIAL_API_KEY or OPENAI_API_KEY
-   - Contact your workshop facilitator
 
 {Colors.GREEN}Happy Learning! 🚀{Colors.ENDC}
 """)
@@ -505,7 +541,8 @@ def main():
     if failed_steps:
         print_warning(f"Setup completed with warnings in: {', '.join(failed_steps)}")
     
-    print_next_steps()
+    # Ask to launch Jupyter
+    launch_jupyter()
 
 
 if __name__ == "__main__":

@@ -93,7 +93,7 @@ if ! $PYTHON_CMD -c "import venv" &> /dev/null; then
     exit 1
 fi
 
-# Run the main setup script
+# Run the main setup script (includes Jupyter launch)
 echo ""
 print_info "Running setup script..."
 echo ""
@@ -104,7 +104,3 @@ if [ $? -ne 0 ]; then
     print_error "Setup failed. Please check the error messages above."
     exit 1
 fi
-
-echo ""
-print_success "Setup completed successfully!"
-echo ""
