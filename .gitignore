@@ -58,4 +58,3 @@ langsmith_cache/
 logs/
 
 *.zip
-*.md
