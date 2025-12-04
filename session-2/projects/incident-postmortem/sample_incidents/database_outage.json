@@ -1,0 +1,44 @@
+{
+  "incident_id": "INC-2024-0115",
+  "title": "Production Database Connection Pool Exhaustion",
+  "severity": "SEV2",
+  "start_time": "2024-01-15T14:30:00Z",
+  "end_time": "2024-01-15T16:45:00Z",
+  "duration_minutes": 135,
+  "affected_services": [
+    "api-gateway",
+    "user-service",
+    "order-service",
+    "payment-service"
+  ],
+  "impact": {
+    "users_affected": 15000,
+    "failed_requests": 45000,
+    "revenue_impact_usd": 12500
+  },
+  "logs": "[2024-01-15T14:30:01Z] WARN postgres-primary: Active connections: 95/100\n[2024-01-15T14:30:05Z] WARN postgres-primary: Active connections: 98/100\n[2024-01-15T14:30:15Z] ERROR api-gateway: Connection pool exhausted, waiting for available connection\n[2024-01-15T14:30:16Z] ERROR api-gateway: Request timeout after 30000ms - endpoint=/api/v1/users\n[2024-01-15T14:30:17Z] WARN user-service: Slow query detected: SELECT * FROM users WHERE email=? (took 15234ms)\n[2024-01-15T14:30:18Z] ERROR api-gateway: Connection pool exhausted, 100/100 connections in use\n[2024-01-15T14:30:19Z] ERROR postgres-primary: too many connections for role \"app_user\"\n[2024-01-15T14:30:25Z] ERROR order-service: Failed to process order ORD-12345: connection timed out\n[2024-01-15T14:30:30Z] ERROR payment-service: Payment processing failed for TXN-98765\n[2024-01-15T14:31:00Z] ERROR order-service: Failed to connect to database: connection timed out\n[2024-01-15T14:32:00Z] ALERT monitoring: Database connection latency > 10000ms threshold\n[2024-01-15T14:32:05Z] INFO pagerduty: Alert fired - Database Connection Critical\n[2024-01-15T14:35:00Z] INFO oncall: Page acknowledged by alice@company.com\n[2024-01-15T14:37:00Z] INFO alice: Starting investigation - checking connection pool metrics\n[2024-01-15T14:40:00Z] INFO alice: Connection pool shows 100% utilization\n[2024-01-15T14:42:00Z] INFO alice: Checking slow query log\n[2024-01-15T14:45:00Z] INFO alice: Escalating to DBA team\n[2024-01-15T14:47:00Z] INFO bob-dba: Joining incident\n[2024-01-15T14:50:00Z] INFO bob-dba: Running EXPLAIN ANALYZE on slow queries\n[2024-01-15T14:55:00Z] INFO bob-dba: Found sequential scan on users table - email column not indexed\n[2024-01-15T15:00:00Z] INFO bob-dba: Root cause identified - missing index on users.email\n[2024-01-15T15:05:00Z] INFO bob-dba: Creating index CREATE INDEX CONCURRENTLY idx_users_email ON users(email)\n[2024-01-15T15:15:00Z] INFO bob-dba: Index creation in progress - 25%\n[2024-01-15T15:25:00Z] INFO bob-dba: Index creation in progress - 75%\n[2024-01-15T15:30:00Z] INFO bob-dba: Index creation complete\n[2024-01-15T15:32:00Z] INFO monitoring: Query latency dropping - avg 50ms\n[2024-01-15T15:35:00Z] INFO monitoring: Connection pool utilization: 45%\n[2024-01-15T15:45:00Z] INFO monitoring: Connection latency returning to normal - p99 < 100ms\n[2024-01-15T16:00:00Z] INFO api-gateway: All connections healthy\n[2024-01-15T16:15:00Z] INFO monitoring: Error rate returned to baseline 0.01%\n[2024-01-15T16:30:00Z] INFO alice: Incident marked as resolved\n[2024-01-15T16:45:00Z] INFO monitoring: All metrics within normal range for 15 minutes - incident closed",
+  "timeline": [
+    {"time": "14:30", "event": "First database connection errors detected"},
+    {"time": "14:32", "event": "Monitoring alerts triggered"},
+    {"time": "14:35", "event": "On-call engineer (Alice) paged and acknowledged"},
+    {"time": "14:45", "event": "DBA team escalation initiated"},
+    {"time": "14:47", "event": "DBA (Bob) joined incident"},
+    {"time": "15:00", "event": "Root cause identified - missing index on users.email"},
+    {"time": "15:05", "event": "Started creating index"},
+    {"time": "15:30", "event": "Index creation completed"},
+    {"time": "15:45", "event": "Metrics returning to normal"},
+    {"time": "16:30", "event": "Incident marked as resolved"},
+    {"time": "16:45", "event": "Incident officially closed after 15-minute monitoring"}
+  ],
+  "responders": [
+    {"name": "Alice Chen", "role": "On-call Engineer", "joined_at": "14:35"},
+    {"name": "Bob Smith", "role": "Database Administrator", "joined_at": "14:47"},
+    {"name": "Carol Davis", "role": "SRE Lead", "joined_at": "15:00"}
+  ],
+  "related_alerts": [
+    "Database Connection Critical",
+    "API Gateway Error Rate High",
+    "Payment Processing Failures"
+  ],
+  "tags": ["database", "performance", "connection-pool", "missing-index"]
+}

@@ -1,0 +1,43 @@
+{
+  "incident_id": "INC-2024-0203",
+  "title": "Kubernetes Memory Leak Causing Pod Evictions",
+  "severity": "SEV3",
+  "start_time": "2024-02-03T03:00:00Z",
+  "end_time": "2024-02-03T06:30:00Z",
+  "duration_minutes": 210,
+  "affected_services": [
+    "recommendation-service",
+    "search-service"
+  ],
+  "impact": {
+    "users_affected": 5000,
+    "degraded_experience": true,
+    "revenue_impact_usd": 2000
+  },
+  "logs": "[2024-02-03T03:00:15Z] WARN k8s-node-03: Memory pressure detected - available: 512MB\n[2024-02-03T03:05:00Z] INFO k8s-node-03: Pod recommendation-service-7d8f9-abc12 memory usage: 3.8GB/4GB\n[2024-02-03T03:10:00Z] WARN recommendation-service: GC pause time increasing - last pause 850ms\n[2024-02-03T03:15:00Z] ERROR k8s-node-03: Evicting pod recommendation-service-7d8f9-abc12 due to memory pressure\n[2024-02-03T03:15:05Z] INFO k8s: Scheduling new pod recommendation-service-7d8f9-xyz99 on node-05\n[2024-02-03T03:15:30Z] INFO recommendation-service: Pod starting - loading ML model\n[2024-02-03T03:17:00Z] INFO recommendation-service: Model loaded, service ready\n[2024-02-03T03:30:00Z] WARN k8s-node-05: Memory pressure detected - available: 600MB\n[2024-02-03T03:35:00Z] INFO k8s-node-05: Pod recommendation-service-7d8f9-xyz99 memory usage: 3.5GB/4GB\n[2024-02-03T03:45:00Z] WARN recommendation-service: Cache size: 2.1GB, entries: 5000000\n[2024-02-03T03:50:00Z] ERROR k8s-node-05: Evicting pod recommendation-service-7d8f9-xyz99\n[2024-02-03T03:50:05Z] ALERT monitoring: Recommendation Service availability < 99%\n[2024-02-03T03:52:00Z] INFO pagerduty: Alert fired - Service Availability Warning\n[2024-02-03T04:00:00Z] INFO oncall: Page acknowledged by jennifer@company.com\n[2024-02-03T04:05:00Z] INFO jennifer: Investigating pod eviction pattern\n[2024-02-03T04:10:00Z] INFO jennifer: Multiple pods evicted in last hour\n[2024-02-03T04:15:00Z] INFO jennifer: Checking memory metrics in Grafana\n[2024-02-03T04:20:00Z] INFO jennifer: Memory usage grows linearly over time - leak suspected\n[2024-02-03T04:25:00Z] INFO jennifer: Analyzing heap dump from before eviction\n[2024-02-03T04:35:00Z] INFO jennifer: Found leak - LRU cache not evicting expired entries\n[2024-02-03T04:40:00Z] INFO jennifer: Bug in cache TTL implementation identified\n[2024-02-03T04:45:00Z] INFO jennifer: Preparing hotfix - fix cache eviction logic\n[2024-02-03T05:00:00Z] INFO jennifer: Hotfix deployed to staging\n[2024-02-03T05:15:00Z] INFO jennifer: Staging tests passing, memory stable\n[2024-02-03T05:30:00Z] INFO jennifer: Rolling out hotfix to production\n[2024-02-03T05:45:00Z] INFO k8s: Deployment rollout complete - recommendation-service v2.3.1\n[2024-02-03T06:00:00Z] INFO monitoring: Memory usage stable at 1.5GB\n[2024-02-03T06:15:00Z] INFO monitoring: No pod evictions in 30 minutes\n[2024-02-03T06:30:00Z] INFO oncall: Incident resolved - memory leak fixed",
+  "timeline": [
+    {"time": "03:00", "event": "First memory pressure warning on node-03"},
+    {"time": "03:15", "event": "First pod eviction"},
+    {"time": "03:50", "event": "Second pod eviction, alert triggered"},
+    {"time": "04:00", "event": "On-call (Jennifer) acknowledged"},
+    {"time": "04:35", "event": "Memory leak identified in LRU cache"},
+    {"time": "05:00", "event": "Hotfix deployed to staging"},
+    {"time": "05:30", "event": "Hotfix rolled out to production"},
+    {"time": "06:30", "event": "Incident resolved"}
+  ],
+  "responders": [
+    {"name": "Jennifer Park", "role": "Backend Engineer", "joined_at": "04:00"}
+  ],
+  "related_alerts": [
+    "Service Availability Warning",
+    "Pod Eviction Rate High",
+    "Memory Pressure - Node"
+  ],
+  "code_changes": {
+    "commit": "abc123def",
+    "pr_number": 1234,
+    "files_changed": ["src/cache/lru_cache.py"],
+    "description": "Fix TTL check in LRU cache eviction logic"
+  },
+  "tags": ["kubernetes", "memory-leak", "cache", "pod-eviction"]
+}

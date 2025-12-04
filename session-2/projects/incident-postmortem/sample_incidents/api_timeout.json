@@ -1,0 +1,49 @@
+{
+  "incident_id": "INC-2024-0122",
+  "title": "External Payment Gateway API Timeout Cascade",
+  "severity": "SEV1",
+  "start_time": "2024-01-22T09:15:00Z",
+  "end_time": "2024-01-22T11:30:00Z",
+  "duration_minutes": 135,
+  "affected_services": [
+    "payment-service",
+    "checkout-service",
+    "order-service",
+    "notification-service"
+  ],
+  "impact": {
+    "users_affected": 50000,
+    "failed_transactions": 12000,
+    "revenue_impact_usd": 150000
+  },
+  "logs": "[2024-01-22T09:15:01Z] WARN payment-service: External API response slow: stripe-api took 5234ms\n[2024-01-22T09:15:15Z] WARN payment-service: External API response slow: stripe-api took 8500ms\n[2024-01-22T09:15:30Z] ERROR payment-service: Request timeout to stripe-api after 10000ms\n[2024-01-22T09:15:45Z] ERROR checkout-service: Payment processing failed - upstream timeout\n[2024-01-22T09:16:00Z] ERROR payment-service: Circuit breaker OPEN for stripe-api\n[2024-01-22T09:16:05Z] WARN order-service: Order ORD-55555 stuck in PENDING_PAYMENT state\n[2024-01-22T09:16:10Z] ERROR payment-service: 50 requests queued, circuit breaker preventing new calls\n[2024-01-22T09:16:30Z] ALERT monitoring: Payment Success Rate dropped below 50%\n[2024-01-22T09:17:00Z] ERROR checkout-service: Thread pool exhausted - all threads waiting on payment-service\n[2024-01-22T09:17:30Z] ERROR api-gateway: Checkout endpoint returning 503\n[2024-01-22T09:18:00Z] ALERT monitoring: Checkout Error Rate > 30%\n[2024-01-22T09:18:05Z] INFO pagerduty: SEV1 Alert - Payment System Critical\n[2024-01-22T09:20:00Z] INFO oncall: Page acknowledged by mike@company.com\n[2024-01-22T09:22:00Z] INFO mike: Checking Stripe status page - no reported issues\n[2024-01-22T09:25:00Z] INFO mike: Observing high latency to Stripe API from our end\n[2024-01-22T09:28:00Z] INFO mike: Checking network path to Stripe\n[2024-01-22T09:30:00Z] INFO mike: Escalating to Infrastructure team\n[2024-01-22T09:32:00Z] INFO sarah-infra: Joining incident\n[2024-01-22T09:35:00Z] INFO sarah-infra: Running traceroute to Stripe endpoints\n[2024-01-22T09:38:00Z] INFO sarah-infra: Found packet loss at ISP hop level\n[2024-01-22T09:40:00Z] INFO sarah-infra: Contacting ISP support\n[2024-01-22T09:45:00Z] INFO mike: Implementing fallback to backup payment processor\n[2024-01-22T09:50:00Z] INFO mike: Enabled Adyen as fallback payment processor\n[2024-01-22T09:52:00Z] INFO monitoring: Payment success rate recovering - 75%\n[2024-01-22T09:55:00Z] INFO sarah-infra: ISP acknowledges routing issue, ETA 30 minutes\n[2024-01-22T10:00:00Z] INFO monitoring: Payment success rate at 95% with fallback\n[2024-01-22T10:30:00Z] INFO sarah-infra: ISP reports routing issue resolved\n[2024-01-22T10:35:00Z] INFO mike: Testing Stripe connectivity - latency normal\n[2024-01-22T10:40:00Z] INFO mike: Re-enabling Stripe as primary processor\n[2024-01-22T10:45:00Z] INFO monitoring: All payment processors healthy\n[2024-01-22T11:00:00Z] INFO mike: Disabling fallback mode\n[2024-01-22T11:15:00Z] INFO monitoring: Error rates at baseline\n[2024-01-22T11:30:00Z] INFO oncall: Incident resolved and closed",
+  "timeline": [
+    {"time": "09:15", "event": "Stripe API latency increase detected"},
+    {"time": "09:16", "event": "Circuit breaker opened for Stripe"},
+    {"time": "09:17", "event": "Cascade failure - checkout thread pool exhausted"},
+    {"time": "09:18", "event": "SEV1 alert triggered"},
+    {"time": "09:20", "event": "On-call engineer (Mike) acknowledged"},
+    {"time": "09:32", "event": "Infrastructure team (Sarah) joined"},
+    {"time": "09:38", "event": "Root cause identified - ISP routing issue"},
+    {"time": "09:50", "event": "Fallback payment processor enabled"},
+    {"time": "10:00", "event": "Service recovery with fallback"},
+    {"time": "10:30", "event": "ISP resolved routing issue"},
+    {"time": "10:40", "event": "Primary processor re-enabled"},
+    {"time": "11:30", "event": "Incident closed"}
+  ],
+  "responders": [
+    {"name": "Mike Johnson", "role": "On-call Engineer", "joined_at": "09:20"},
+    {"name": "Sarah Lee", "role": "Infrastructure Engineer", "joined_at": "09:32"},
+    {"name": "David Wang", "role": "Engineering Manager", "joined_at": "09:45"}
+  ],
+  "related_alerts": [
+    "Payment Success Rate Critical",
+    "Checkout Error Rate High",
+    "Circuit Breaker Open - Stripe"
+  ],
+  "external_dependencies": [
+    {"name": "Stripe API", "status": "degraded due to ISP issues"},
+    {"name": "Adyen API", "status": "healthy - used as fallback"}
+  ],
+  "tags": ["payment", "external-dependency", "circuit-breaker", "cascade-failure", "isp"]
+}
