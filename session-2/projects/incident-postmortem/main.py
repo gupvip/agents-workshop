@@ -8,11 +8,13 @@ This is a production-ready LangGraph application that demonstrates:
 - Human-in-the-loop for critical incidents
 - Streaming output
 - Checkpointing for durable execution
+- Langfuse observability (optional)
 
 Usage:
     python main.py --file sample_incidents/database_outage.json
     python main.py --file sample_incidents/api_timeout.json --stream
     python main.py --interactive
+    python main.py --demo --trace  # Enable Langfuse tracing
 """
 
 import argparse
@@ -27,6 +29,13 @@ from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from config import config
 from graph.workflow import create_postmortem_graph
 from graph.state import IncidentState
+
+# Import observability module (optional)
+try:
+    from observability import get_traced_config, check_langfuse_setup, is_langfuse_configured
+    OBSERVABILITY_AVAILABLE = True
+except ImportError:
+    OBSERVABILITY_AVAILABLE = False
 
 
 def get_llm():
@@ -301,6 +310,11 @@ Examples:
         default=3,
         help="Maximum refinement iterations (default: 3)"
     )
+    parser.add_argument(
+        "--trace", "-t",
+        action="store_true",
+        help="Enable Langfuse tracing for observability"
+    )
     
     args = parser.parse_args()
     
@@ -369,6 +383,18 @@ Examples:
     }
     
     run_config = {"configurable": {"thread_id": incident_data.get("incident_id", "default")}}
+    
+    # Add Langfuse tracing if enabled
+    if args.trace:
+        if OBSERVABILITY_AVAILABLE and is_langfuse_configured():
+            run_config = get_traced_config(
+                incident_id=incident_data.get("incident_id", "default"),
+                severity=incident_data.get("severity", "SEV3"),
+                run_name="postmortem-generation",
+            )
+            print("✅ Langfuse tracing enabled")
+        else:
+            print("⚠️  Langfuse not configured. Run: python observability.py")
     
     # Run
     if args.stream:
