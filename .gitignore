@@ -58,3 +58,4 @@ langsmith_cache/
 logs/
 
 *.zip
+.deepeval/

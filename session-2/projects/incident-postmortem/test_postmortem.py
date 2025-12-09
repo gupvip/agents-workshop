@@ -6,29 +6,30 @@ Run with: pytest test_postmortem.py -v
 
 import pytest
 import json
+import os
 from pathlib import Path
 
 # Test imports work
 def test_imports():
     """Verify all modules can be imported."""
-    from config import settings, Settings
+    from config import config, Config
     from graph.state import IncidentState, LogAnalysis, RootCauseAnalysis
-    from agents import log_analyzer_agent, root_cause_agent, writer_agent, reviewer_agent
-    from memory import IncidentStore, incident_store
+    from agents import analyze_logs, analyze_root_cause, write_report, review_report
+    from memory import IncidentStore
     
-    assert settings is not None
+    assert config is not None
     assert IncidentState is not None
 
 
-def test_settings():
-    """Test settings configuration."""
-    from config import Settings
+def test_config():
+    """Test configuration."""
+    from config import Config
     
     # Test default settings
-    s = Settings()
-    assert s.model is not None
-    assert s.max_iterations == 3
-    assert s.quality_threshold == 0.8
+    c = Config()
+    assert c.model_name is not None
+    assert c.max_revision_iterations == 3
+    assert c.quality_threshold == 0.75
 
 
 def test_incident_store():
@@ -73,15 +74,16 @@ def test_log_analysis_model():
     from graph.state import LogAnalysis
     
     analysis = LogAnalysis(
-        timeline=[{"time": "09:00", "event": "Incident started"}],
-        errors=["Error 1", "Error 2"],
-        warnings=["Warning 1"],
-        patterns=["Pattern 1"],
-        key_events=["Event 1"]
+        summary="Test summary of logs",
+        error_patterns=["Error 1", "Error 2"],
+        affected_services=["service-a", "service-b"],
+        key_timestamps=[{"time": "09:00", "event": "Incident started"}],
+        severity_indicators=["High CPU usage"]
     )
     
-    assert len(analysis.errors) == 2
-    assert len(analysis.timeline) == 1
+    assert len(analysis.error_patterns) == 2
+    assert len(analysis.affected_services) == 2
+    assert analysis.summary == "Test summary of logs"
 
 
 def test_root_cause_model():
@@ -89,8 +91,9 @@ def test_root_cause_model():
     from graph.state import RootCauseAnalysis
     
     rca = RootCauseAnalysis(
-        primary_cause="Database connection pool exhausted",
+        root_cause="Database connection pool exhausted",
         contributing_factors=["Missing index", "High traffic"],
+        failure_chain=["Traffic spike", "Slow queries", "Pool exhaustion"],
         five_whys=[
             "Why did requests fail? Connection pool exhausted",
             "Why was pool exhausted? Slow queries",
@@ -98,36 +101,45 @@ def test_root_cause_model():
         evidence=["Log line 1", "Log line 2"]
     )
     
-    assert "Database" in rca.primary_cause
+    assert "Database" in rca.root_cause
     assert len(rca.contributing_factors) == 2
+    assert len(rca.failure_chain) == 3
 
 
-def test_review_result_model():
-    """Test ReviewResult Pydantic model."""
-    from graph.state import ReviewResult
+def test_report_review_model():
+    """Test ReportReview Pydantic model."""
+    from graph.state import ReportReview
     
-    review = ReviewResult(
-        quality_score=0.85,
-        passed=True,
-        feedback="Good report",
-        strengths=["Clear timeline"],
-        improvements=[]
+    review = ReportReview(
+        completeness_score=8,
+        clarity_score=9,
+        accuracy_score=7,
+        actionability_score=8,
+        blamelessness_score=9,
+        overall_score=8,
+        strengths=["Clear timeline", "Good root cause analysis"],
+        weaknesses=["Missing metrics"],
+        revision_suggestions=["Add more metrics"],
+        approved=True
     )
     
-    assert review.passed is True
-    assert review.quality_score > 0.8
+    assert review.approved is True
+    assert review.overall_score == 8
+    assert len(review.strengths) == 2
 
 
 # Integration test (requires API key)
 @pytest.mark.skipif(
-    True,  # Skip by default, enable when API key is available
+    not os.getenv("OPENAI_API_KEY") and not os.getenv("DIAL_API_KEY"),
     reason="Requires API key"
 )
 def test_graph_creation():
     """Test that the graph can be created."""
     from graph.workflow import create_postmortem_graph
+    from main import get_llm
     
-    graph = create_postmortem_graph()
+    model = get_llm()
+    graph = create_postmortem_graph(model)
     assert graph is not None
 
 

@@ -1,4 +1,5 @@
-.PHONY: help install demo demo-stream database api memory interactive test clean setup venv
+.PHONY: help install demo demo-stream database api memory interactive test clean setup venv \
+        trace trace-stream trace-database check-langfuse test-eval
 
 # Python interpreter
 PYTHON := python3
@@ -26,8 +27,15 @@ help:
 	@echo "    make memory         - Run memory leak sample"
 	@echo "    make interactive    - Run in interactive mode"
 	@echo ""
-	@echo "  Testing & Maintenance:"
-	@echo "    make test           - Run tests"
+	@echo "  Observability (Langfuse):"
+	@echo "    make check-langfuse - Check Langfuse configuration"
+	@echo "    make trace          - Run demo WITH Langfuse tracing"
+	@echo "    make trace-stream   - Run demo with streaming + tracing"
+	@echo "    make trace-database - Run database incident with tracing"
+	@echo ""
+	@echo "  Testing & Evaluation:"
+	@echo "    make test           - Run unit tests"
+	@echo "    make test-eval      - Run DeepEval quality tests"
 	@echo "    make clean          - Clean cache and remove venv"
 	@echo ""
 	@echo "════════════════════════════════════════════════════════════════════════"
@@ -97,6 +105,38 @@ interactive: venv
 test: venv
 	@echo "🧪 Running tests..."
 	@$(VENV_BIN)/pytest test_postmortem.py -v
+
+# Run DeepEval quality tests
+test-eval: venv
+	@echo "🧪 Running DeepEval evaluation tests..."
+	@$(VENV_BIN)/deepeval test run test_eval.py
+
+# ============================================================
+# Langfuse Observability Commands
+# ============================================================
+
+# Check Langfuse configuration
+check-langfuse: venv
+	@echo "🔍 Checking Langfuse configuration..."
+	@$(PYTHON_VENV) observability.py
+
+# Run demo with Langfuse tracing enabled
+trace: venv
+	@echo "🚀 Running demo WITH Langfuse tracing..."
+	@echo "   View traces at: https://cloud.langfuse.com"
+	@$(PYTHON_VENV) main.py --demo --trace
+
+# Run demo with streaming + Langfuse tracing
+trace-stream: venv
+	@echo "🚀 Running demo with streaming + Langfuse tracing..."
+	@echo "   View traces at: https://cloud.langfuse.com"
+	@$(PYTHON_VENV) main.py --demo --stream --trace
+
+# Run database incident with Langfuse tracing
+trace-database: venv
+	@echo "📊 Running database incident WITH Langfuse tracing..."
+	@echo "   View traces at: https://cloud.langfuse.com"
+	@$(PYTHON_VENV) main.py --file sample_incidents/database_outage.json --stream --trace
 
 # Clean cache files and remove venv
 clean:

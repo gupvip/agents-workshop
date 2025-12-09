@@ -79,6 +79,41 @@ make demo
 - **Python 3.11+** required
 - **API Key**: Either DIAL (for EPAM employees) or OpenAI
 
+## 🔍 Observability & Evaluation
+
+### Langfuse Integration (Observability)
+
+Track all LLM calls, view traces, and debug agent behavior:
+
+```bash
+# 1. Set Langfuse credentials
+export LANGFUSE_PUBLIC_KEY="pk-lf-..."
+export LANGFUSE_SECRET_KEY="sk-lf-..."
+
+# 2. Run with tracing enabled
+python main.py --demo --trace
+
+# 3. Check setup
+python observability.py
+```
+
+View traces at: https://cloud.langfuse.com
+
+### DeepEval Integration (Testing)
+
+Evaluate output quality using LLM-as-Judge metrics:
+
+```bash
+# Run evaluation tests
+pytest test_eval.py -v
+
+# Run integration tests (requires API key)
+pytest test_eval.py -v -m integration
+
+# Generate detailed DeepEval report
+deepeval test run test_eval.py
+```
+
 ## 🎮 Usage
 
 ### Available Commands
